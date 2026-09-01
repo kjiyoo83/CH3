@@ -1,16 +1,26 @@
 #include "Item.h"
+#include "Components/SphereComponent.h"
 
 //DEFINE_LOG_CATEGORY(LogSparta);
 
 // Sets default values
 AItem::AItem()
 {
+    PrimaryActorTick.bCanEverTick = true;
+
     SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
     SetRootComponent(SceneRoot);
 
-    StaticMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMech"));
-    StaticMeshComp->SetupAttachment(SceneRoot);
-       
+    CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComp"));
+    CollisionComp->SetupAttachment(SceneRoot);
+    CollisionComp->InitSphereRadius(100.0f);
+    CollisionComp->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+    CollisionComp->OnComponentBeginOverlap.AddDynamic(this, &AItem::OnItemOverlap);
+    CollisionComp->SetGenerateOverlapEvents(true);
+
+    StaticMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
+    StaticMeshComp->SetupAttachment(CollisionComp);
+    StaticMeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     //리플렉션 등록을 했기 때문에 코드상에서 필요X
     //static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("'/Game/Resources/Props/SM_Chair.SM_Chair'"));
     //if (MeshAsset.Succeeded())
@@ -24,7 +34,6 @@ AItem::AItem()
     //    StaticMeshComp->SetMaterial(0, MaterialAsset.Object); //머테리얼은 하나만 쓰는 것이 아니기 때문에 0번 인덱스처럼 인덱스를 나타내야함
     //} 
     
-    PrimaryActorTick.bCanEverTick = true;
     RotationSpeed = 90.0f;
 }
 
@@ -52,8 +61,36 @@ void AItem::BeginPlay()
     FTransform NewTransform(NewRotator, NewLocation, NewScale); 
 
     SetActorTransform(NewTransform);*/
+}
 
+void AItem::OnItemOverlap(
+    UPrimitiveComponent* OverlappedComponent,
+    AActor* OtherActor,
+    UPrimitiveComponent* OtherComp,
+    int32 OtherBodyIndex,
+    bool bFromSweep,
+    const FHitResult& SweepResult)
+{
+    if (OtherActor && OtherActor->ActorHasTag(TEXT("Player")))
+    {
+        ActivateItem(OtherActor);
+    }
+}
+
+void AItem::ActivateItem(AActor* Activator)
+{
     OnItemPickedUp();
+    DestroyItem();
+}
+
+FName AItem::GetItemType() const
+{
+    return ItemType;
+}
+
+void AItem::DestroyItem()
+{
+    Destroy();
 }
 
 void AItem::Tick(float DeltaTime)

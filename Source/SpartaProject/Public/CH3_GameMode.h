@@ -9,4 +9,6 @@ class SPARTAPROJECT_API ACH3_GameMode : public AGameMode
 {
 	GENERATED_BODY()
 	
+public:
+	ACH3_GameMode();
 };
