@@ -53,8 +53,30 @@ public:
     UFUNCTION()
     void Look(const FInputActionValue& value);
 
+    UFUNCTION(BlueprintPure, Category = "Health")
+    float GetHealth() const { return Health; }
+
+    UFUNCTION(BlueprintCallable, Category = "Health")
+    void AddHealth(float Amount);
+
+    virtual float TakeDamage(
+        float DamageAmount,
+        FDamageEvent const& DamageEvent,
+        AController* EventInstigator,
+        AActor* DamageCauser
+    ) override;
+
 protected:
 	virtual void BeginPlay() override;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+    float MaxHealth = 100.0f;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
+    float Health = 100.0f;
+
+    UFUNCTION(BlueprintCallable, Category = "Health")
+    void OnDeath();
 
 public:	
 	virtual void Tick(float DeltaTime) override;
